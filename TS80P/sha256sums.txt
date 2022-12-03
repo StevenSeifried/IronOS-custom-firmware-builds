@@ -1,0 +1,1 @@
+ff04cc6e3fe5d8ae35f139a7cb03d04da9bb374511a6b998f9e5be244a825ad4  IronOS_v2.19_TS80P-DE_EN.hex
