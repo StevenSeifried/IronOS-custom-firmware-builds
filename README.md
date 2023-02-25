@@ -6,6 +6,9 @@ Firmware languages are German and English.
 
 ## build instructions
 - Make sure that you have `Docker` and `docker-compose` installed
+### automated
+- `sudo bash build_latest_ironos.sh`
+### manual
 - `git clone --recursive --branch v2.20 https://github.com/Ralim/IronOS.git`
 - `cd IronOS`
 - `sh start_dev.sh`
@@ -17,6 +20,7 @@ Firmware languages are German and English.
     - For TS80P: `make -j8 model=TS80P custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
     - For MHP30: `make -j8 model=MHP30 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
 - `exit`
+## flashing
 - Firmware files are in `source/Hexfile`
 - Pinecil needs `.dfu`, the Miniware's need `.hex`
 - For flashing please refer the [IronOS flashing guide for your model](https://ralim.github.io/IronOS/GettingStarted/)
