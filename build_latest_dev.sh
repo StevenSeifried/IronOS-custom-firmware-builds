@@ -26,12 +26,24 @@ mv TS100_multi_compressed_Custom.hex ../../TS100/IronOS_${RELEASE}_TS100-DE_EN.h
 mv TS80_multi_compressed_Custom.hex ../../TS80/IronOS_${RELEASE}_TS80-DE_EN.hex
 mv TS80P_multi_compressed_Custom.hex ../../TS80P/IronOS_${RELEASE}_TS80P-DE_EN.hex
 cd ../../
-sha256sum Pinecil_v1/IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu >> Pinecil_v1/sha256sums.txt
-sha256sum Pinecil_v2/IronOS_${RELEASE}_Pinecil_v2-DE_EN.dfu >> Pinecil_v2/sha256sums.txt
-sha256sum MHP30/IronOS_${RELEASE}_MHP30-DE_EN.hex >> MHP30/sha256sums.txt
-sha256sum TS80/IronOS_${RELEASE}_TS80-DE_EN.hex >> TS80/sha256sums.txt
-sha256sum TS80P/IronOS_${RELEASE}_TS80P-DE_EN.hex >> TS80/sha256sums.txt
-sha256sum TS100/IronOS_${RELEASE}_TS100-DE_EN.hex >> TS100/sha256sums.txt
+cd Pinecil_v1/
+sha256sum IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu >> sha256sums.txt
+cd ../
+cd Pinecil_v2/
+sha256sum IronOS_${RELEASE}_Pinecil_v2-DE_EN.dfu >> sha256sums.txt
+cd ../
+cd MHP30
+sha256sum IronOS_${RELEASE}_MHP30-DE_EN.hex >> sha256sums.txt
+cd ../
+cd TS80
+sha256sum IronOS_${RELEASE}_TS80-DE_EN.hex >> sha256sums.txt
+cd ../
+cd TS80P
+sha256sum IronOS_${RELEASE}_TS80P-DE_EN.hex >> sha256sums.txt
+cd ../
+cd TS100
+sha256sum IronOS_${RELEASE}_TS100-DE_EN.hex >> sha256sums.txt
+cd ../
 chown -R 1000:1000 */sha256sums.txt
 rm -R IronOS
 unset LC_ALL
