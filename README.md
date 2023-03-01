@@ -7,7 +7,10 @@ Firmware languages are German and English.
 ## build instructions
 - Make sure that you have `Docker` and `docker-compose` installed
 ### automated
-- `sudo bash build_latest_ironos.sh`
+#### latest stable
+- `sudo bash build_latest_stable.sh`
+#### latest dev
+- `sudo bash build_latest_dev.sh`
 ### manual
 - `git clone --recursive --branch v2.20 https://github.com/Ralim/IronOS.git`
 - `cd IronOS`
