@@ -1,1 +1,1 @@
-9419116adbc7bfd0065ec7d77edc57efc0d6c5f2753b5aa75cf2a8cb5b5a5aaf  IronOS_v2.20_Pinecil_v2-DE_EN.dfu
+1514d1ca4c56985898eee5fdd6a3b27d039be03ed9a9857f3c80c100151ced04  IronOS_v2.20_Pinecil_v2-DE_EN.bin
