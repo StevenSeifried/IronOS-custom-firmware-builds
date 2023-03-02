@@ -25,6 +25,6 @@ Firmware languages are German and English.
 - `exit`
 ## flashing
 - Firmware files are in `source/Hexfile`
-- Pinecil needs `.dfu`, the Miniware's need `.hex`
+- Pinecil v1 needs `.dfu`, Pinecil v2 need `.bin`, the Miniware's need `.hex`
 - For flashing please refer the [IronOS flashing guide for your model](https://ralim.github.io/IronOS/GettingStarted/)
 
