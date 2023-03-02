@@ -20,7 +20,7 @@ cd ../../Output
 chown -R 1000:1000 *
 chmod 644 *
 mv Pinecil_multi_compressed_Custom.dfu ../../Pinecil_v1/IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu
-mv Pinecilv2_multi_compressed_Custom.dfu ../../Pinecil_v2/IronOS_${RELEASE}_Pinecil_v2-DE_EN.dfu
+mv Pinecilv2_multi_compressed_Custom.bin ../../Pinecil_v2/IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin
 mv MHP30_multi_compressed_Custom.hex ../../MHP30/IronOS_${RELEASE}_MHP30-DE_EN.hex
 mv TS100_multi_compressed_Custom.hex ../../TS100/IronOS_${RELEASE}_TS100-DE_EN.hex
 mv TS80_multi_compressed_Custom.hex ../../TS80/IronOS_${RELEASE}_TS80-DE_EN.hex
@@ -30,7 +30,7 @@ cd Pinecil_v1/
 sha256sum IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu >> sha256sums.txt
 cd ../
 cd Pinecil_v2/
-sha256sum IronOS_${RELEASE}_Pinecil_v2-DE_EN.dfu >> sha256sums.txt
+sha256sum IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin >> sha256sums.txt
 cd ../
 cd MHP30
 sha256sum IronOS_${RELEASE}_MHP30-DE_EN.hex >> sha256sums.txt
