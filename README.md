@@ -1,6 +1,6 @@
 # IronOS custom firmware builds
 
-Repo to host and archive my own [IronOS](https://github.com/Ralim/IronOS) builds. This repo is primarily for my [Pine64 Pinecil v1](https://wiki.pine64.org/wiki/Pinecil). The firmware builds for the Miniware models and the Pinecil v2 are untested by me due to missing hardware.
+Repo to host and archive my own [IronOS](https://github.com/Ralim/IronOS) builds. This repo is primarily for my [Pine64 Pinecil v2](https://wiki.pine64.org/wiki/Pinecil). The firmware builds for the Miniware models are untested by me due to missing hardware.
 
 Firmware languages are German and English.
 
@@ -25,6 +25,8 @@ Firmware languages are German and English.
 - `exit`
 ## flashing
 - Firmware files are in `source/Hexfile`
-- Pinecil v1 needs `.dfu`, Pinecil v2 need `.bin`, the Miniware's need `.hex`
+    - Pinecil v1 needs `.dfu`
+    - Pinecil v2 need `.bin`
+    - the Miniware's need `.hex`
 - For flashing please refer the [IronOS flashing guide for your model](https://ralim.github.io/IronOS/GettingStarted/)
 
