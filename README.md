@@ -16,12 +16,12 @@ Firmware languages are German and English.
 - `cd IronOS`
 - `sh start_dev.sh`
 - `cd source/source`
-    - For Pinecil v1: `make -j8 model=Pinecil custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
-    - For Pinecil v2: `make -j8 model=Pinecilv2 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
-    - For TS100: `make -j8 model=TS100 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
-    - For TS80: `make -j8 model=TS80 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
-    - For TS80P: `make -j8 model=TS80P custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
-    - For MHP30: `make -j8 model=MHP30 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For Pinecil v1: `make -j$(nproc) model=Pinecil custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For Pinecil v2: `make -j$(nproc) model=Pinecilv2 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For TS100: `make -j$(nproc) model=TS100 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For TS80: `make -j$(nproc) model=TS80 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For TS80P: `make -j$(nproc) model=TS80P custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For MHP30: `make -j$(nproc) model=MHP30 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
 - `exit`
 ## flashing
 - Firmware files are in `source/Hexfile`
