@@ -6,12 +6,12 @@ RELEASE=dev-$(date +"%Y-%m-%d")
 git clone -c advice.detachedHead=false --recursive --branch dev https://github.com/Ralim/IronOS.git
 cd IronOS
 docker-compose up -d builder
-docker exec ironos-builder-1 bash -c "cd source/source && make -j8 model=Pinecil custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
-docker exec ironos-builder-1 bash -c "cd source/source && make -j8 model=Pinecilv2 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
-docker exec ironos-builder-1 bash -c "cd source/source && make -j8 model=TS100 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
-docker exec ironos-builder-1 bash -c "cd source/source && make -j8 model=TS80 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
-docker exec ironos-builder-1 bash -c "cd source/source && make -j8 model=TS80P custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
-docker exec ironos-builder-1 bash -c "cd source/source && make -j8 model=MHP30 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=Pinecil custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=Pinecilv2 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS100 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS80 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS80P custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=MHP30 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker stop ironos-builder-1
 mkdir Output
 cd source/Hexfile
