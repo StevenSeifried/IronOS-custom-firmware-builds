@@ -5,6 +5,7 @@ LANGUAGE=C
 RELEASE=dev-$(date +"%Y-%m-%d")
 git clone -c advice.detachedHead=false --recursive --branch dev https://github.com/Ralim/IronOS.git
 cd IronOS
+systemctl start docker.service
 docker-compose up -d builder
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=Pinecil custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=Pinecilv2 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
