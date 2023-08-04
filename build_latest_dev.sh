@@ -4,15 +4,19 @@ LANG=C
 LANGUAGE=C
 RELEASE=dev-$(date +"%Y-%m-%d")
 git clone -c advice.detachedHead=false --recursive --branch dev https://github.com/Ralim/IronOS.git
+cp Dockerfile IronOS
+cp docker-compose.yml IronOS
 cd IronOS
 systemctl start docker.service
 docker-compose up -d builder
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=Pinecil custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=Pinecilv2 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS100 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS101 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS80 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=TS80P custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=MHP30 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
+docker exec ironos-builder-1 bash -c "cd source/source && make -j$(nproc) model=S60 custom_multi_langs='DE EN' firmware-multi_compressed_Custom" > /dev/null 2>&1
 docker stop ironos-builder-1
 mkdir Output
 cd source/Hexfile
@@ -24,28 +28,11 @@ mv Pinecil_multi_compressed_Custom.dfu ../../Pinecil_v1/IronOS_${RELEASE}_Pineci
 mv Pinecilv2_multi_compressed_Custom.bin ../../Pinecil_v2/IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin
 mv MHP30_multi_compressed_Custom.hex ../../MHP30/IronOS_${RELEASE}_MHP30-DE_EN.hex
 mv TS100_multi_compressed_Custom.hex ../../TS100/IronOS_${RELEASE}_TS100-DE_EN.hex
+mv TS101_multi_compressed_Custom.hex ../../TS101/IronOS_${RELEASE}_TS101-DE_EN.hex
 mv TS80_multi_compressed_Custom.hex ../../TS80/IronOS_${RELEASE}_TS80-DE_EN.hex
 mv TS80P_multi_compressed_Custom.hex ../../TS80P/IronOS_${RELEASE}_TS80P-DE_EN.hex
+mv S60_multi_compressed_Custom.hex ../../S60/IronOS_${RELEASE}_S60-DE_EN.hex
 cd ../../
-cd Pinecil_v1/
-sha256sum IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu >> sha256sums.txt
-cd ../
-cd Pinecil_v2/
-sha256sum IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin >> sha256sums.txt
-cd ../
-cd MHP30
-sha256sum IronOS_${RELEASE}_MHP30-DE_EN.hex >> sha256sums.txt
-cd ../
-cd TS80
-sha256sum IronOS_${RELEASE}_TS80-DE_EN.hex >> sha256sums.txt
-cd ../
-cd TS80P
-sha256sum IronOS_${RELEASE}_TS80P-DE_EN.hex >> sha256sums.txt
-cd ../
-cd TS100
-sha256sum IronOS_${RELEASE}_TS100-DE_EN.hex >> sha256sums.txt
-cd ../
-chown -R 1000:1000 */sha256sums.txt
 rm -R IronOS
 unset LC_ALL
 unset LANG
