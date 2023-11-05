@@ -24,7 +24,7 @@ Firmware languages are German and English.
 - `cd ../source/Hexfile`
 - For MHP30: `mv MHP30_multi_compressed_Custom.hex IronOS_${RELEASE}_MHP30-DE_EN.hex`
 - For Pinecil v1: `mv Pinecil_multi_compressed_Custom.dfu IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu`
-- For Pinecil v2: mv Pinecilv2_multi_compressed_Custom.bin IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin`
+- For Pinecil v2: `mv Pinecilv2_multi_compressed_Custom.bin IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin`
 - For S60: `mv S60_multi_compressed_Custom.hex IronOS_${RELEASE}_S60-DE_EN.hex`
 - For TS80: `mv TS80_multi_compressed_Custom.hex IronOS_${RELEASE}_TS80-DE_EN.hex`
 - For TS80P: `mv TS80P_multi_compressed_Custom.hex IronOS_${RELEASE}_TS80P-DE_EN.hex`
