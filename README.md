@@ -1,6 +1,7 @@
 # IronOS custom firmware builds
 
-Repo to host and archive my own [IronOS](https://github.com/Ralim/IronOS) builds. This repo is primarily for my [Pine64 Pinecil v2](https://wiki.pine64.org/wiki/Pinecil). The firmware builds for the Miniware models are untested by me due to missing hardware.
+Repo to host and archive my own [IronOS](https://github.com/Ralim/IronOS) builds. This repo is primarily for my [Pine64 Pinecil v2](https://wiki.pine64.org/wiki/Pinecil) and Miniware TS101. \
+The firmware builds for the other models are untested by me due to missing hardware.
 
 Firmware languages are German and English.
 
