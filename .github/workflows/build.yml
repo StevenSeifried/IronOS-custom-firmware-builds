@@ -61,55 +61,6 @@ jobs:
             source/Hexfile/LICENSE_RELEASE.md
           if-no-files-found: error
 
-
-  build_multi-lang:
-    runs-on: ubuntu-22.04
-    container:
-      image: alpine:3.19
-    strategy:
-      matrix:
-        model: ["Pinecil", "Pinecilv2"]
-      fail-fast: true
-
-    steps:
-      - name: Install dependencies (apk)
-        run: apk add --no-cache gcc-riscv-none-elf g++-riscv-none-elf gcc-arm-none-eabi g++-arm-none-eabi newlib-riscv-none-elf newlib-arm-none-eabi findutils python3 py3-pip make git bash musl-dev
-      - name: Install dependencies (python)
-        run: python3 -m pip install --break-system-packages bdflib
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Git ownership exception
-        run: git config --global --add safe.directory /__w/IronOS/IronOS && git config --global safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Git meta info
-        run: echo "GITHUB_CI_PR_SHA=${{github.event.pull_request.head.sha}}" >> "${GITHUB_ENV}"
-
-      - name: Build ${{ matrix.model }}
-        run: make -C source/ -j$(nproc) model="${{ matrix.model }}" custom_multi_langs="DE EN" firmware-multi_compressed_Custom
-
-      - name: Copy license files
-        run: cp LICENSE scripts/LICENSE_RELEASE.md  source/Hexfile/
-
-      - name: Generate json index file
-        run: ./source/metadata.py ${{ matrix.model }}_multi-lang.json
-
-      - name: Archive ${{ matrix.model }} artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.model }}_multi-lang
-          path: |
-            source/Hexfile/${{ matrix.model }}_*.hex
-            source/Hexfile/${{ matrix.model }}_*.dfu
-            source/Hexfile/${{ matrix.model }}_*.bin
-            source/Hexfile/${{ matrix.model }}_multi-lang.json
-            source/Hexfile/LICENSE
-            source/Hexfile/LICENSE_RELEASE.md
-          if-no-files-found: error
-
-
   upload_metadata:
     needs: [build, build_multi-lang]
     runs-on: ubuntu-20.04
