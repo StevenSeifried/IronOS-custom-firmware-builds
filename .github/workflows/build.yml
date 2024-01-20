@@ -62,7 +62,7 @@ jobs:
           if-no-files-found: error
 
   upload_metadata:
-    needs: [build, build_multi-lang]
+    needs: [build]
     runs-on: ubuntu-20.04
 
     steps:
