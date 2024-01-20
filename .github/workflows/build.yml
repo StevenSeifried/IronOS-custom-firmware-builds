@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Install dependencies (apk)
-        run: apk add --no-cache gcc-riscv-none-elf g++-riscv-none-elf gcc-arm-none-eabi g++-arm-none-eabi newlib-riscv-none-elf newlib-arm-none-eabi findutils python3 py3-pip make git bash
+        run: apk add --no-cache gcc-riscv-none-elf g++-riscv-none-elf gcc-arm-none-eabi g++-arm-none-eabi newlib-riscv-none-elf newlib-arm-none-eabi findutils python3 py3-pip make git bash curl jq
 
       - name: Install dependencies (python)
         run: python3 -m pip install --break-system-packages bdflib
@@ -33,14 +33,14 @@ jobs:
         with:
           submodules: true
 
-      - name: Git ownership exception
-        run: git config --global --add safe.directory /__w/IronOS/IronOS && git config --global safe.directory "$GITHUB_WORKSPACE"
+      - name: Get release
+        run: RELEASE=$(curl -sL https://api.github.com/repos/Ralim/IronOS/releases/latest | jq -r ".tag_name")"
 
-      - name: Git meta info
-        run: echo "GITHUB_CI_PR_SHA=${{github.event.pull_request.head.sha}}" >> "${GITHUB_ENV}"
+      - name: Clone IronOS
+        run: git clone -c advice.detachedHead=false --recursive --branch $RELEASE https://github.com/Ralim/IronOS.git
 
       - name: Build ${{ matrix.model }}
-        run: cd source && ./build.sh -m ${{ matrix.model }}
+        run: cd IronOS/scripts && ./build.sh -m ${{ matrix.model }}
 
       - name: Copy license files
         run: cp LICENSE scripts/LICENSE_RELEASE.md  source/Hexfile/
