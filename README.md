@@ -1,6 +1,11 @@
 # IronOS custom firmware builds
 
-Repo to host and archive my own [IronOS](https://github.com/Ralim/IronOS) builds. This repo is primarily for my [Pine64 Pinecil v2](https://wiki.pine64.org/wiki/Pinecil) and Miniware TS101. \
+Repo to host and archive my own [IronOS](https://github.com/Ralim/IronOS) builds. This repo is primarily for my devices, which are currently the following:
+- Pine64 Pinecil v2
+- Miniware TS101
+- Sequre S60P
+- Sequre T55 
+
 The firmware builds for the other models are untested by me due to missing hardware.
 
 Firmware languages are German and English.
@@ -16,6 +21,8 @@ Firmware languages are German and English.
     - For Pinecil v1: `make -j$(nproc) model=Pinecil custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
     - For Pinecil v2: `make -j$(nproc) model=Pinecilv2 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
     - For S60: `make -j$(nproc) model=S60 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For S60P: `make -j$(nproc) model=S60P custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
+    - For T55: `make -j$(nproc) model=T55 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
     - For TS80: `make -j$(nproc) model=TS80 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
     - For TS80P: `make -j$(nproc) model=TS80P custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
     - For TS100: `make -j$(nproc) model=TS100 custom_multi_langs="DE EN" firmware-multi_compressed_Custom`
@@ -27,6 +34,8 @@ Firmware languages are German and English.
 - For Pinecil v1: `mv Pinecil_multi_compressed_Custom.dfu IronOS_${RELEASE}_Pinecil_v1-DE_EN.dfu`
 - For Pinecil v2: `mv Pinecilv2_multi_compressed_Custom.bin IronOS_${RELEASE}_Pinecil_v2-DE_EN.bin`
 - For S60: `mv S60_multi_compressed_Custom.hex IronOS_${RELEASE}_S60-DE_EN.hex`
+- For S60P: `mv S60P_multi_compressed_Custom.hex IronOS_${RELEASE}_S60P-DE_EN.hex`
+- For T55: `mv T55_multi_compressed_Custom.hex IronOS_${RELEASE}_T55-DE_EN.hex`
 - For TS80: `mv TS80_multi_compressed_Custom.hex IronOS_${RELEASE}_TS80-DE_EN.hex`
 - For TS80P: `mv TS80P_multi_compressed_Custom.hex IronOS_${RELEASE}_TS80P-DE_EN.hex`
 - For TS100: `mv TS100_multi_compressed_Custom.hex IronOS_${RELEASE}_TS100-DE_EN.hex`
@@ -35,5 +44,5 @@ Firmware languages are German and English.
 - Firmware files are in `source/Hexfile`
     - Pinecil v1 needs `.dfu`
     - Pinecil v2 need `.bin`
-    - the Miniware's and the Sequre S60 need `.hex`
+    - the Miniware's and the Sequre's need `.hex`
 - For flashing please refer the [IronOS flashing guide for your model](https://ralim.github.io/IronOS/GettingStarted/)
