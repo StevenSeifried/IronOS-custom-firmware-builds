@@ -1,0 +1,223 @@
+name: Upstream Tag Check, Build, Tag & Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  check-upstream-latest-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.compare.outputs.new_tag }}
+      tag_name: ${{ steps.compare.outputs.tag_name }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch latest upstream tag
+        id: get_latest_tag
+        run: |
+          git ls-remote --tags --sort="v:refname" https://github.com/Ralim/IronOS.git \
+            | awk '{print $2}' \
+            | grep -v '\^{}' \
+            | sed 's|refs/tags/||' \
+            | tail -n1 > latest_tag.txt
+          latest_tag=$(cat latest_tag.txt)
+          echo "Latest upstream tag: $latest_tag"
+
+      - name: Read last built upstream tag from repo (if exists)
+        id: read_last_tag
+        run: |
+          if [ -f IronOS_last_upstream_tag.txt ]; then
+            echo "last_built_tag=$(cat IronOS_last_upstream_tag.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "last_built_tag=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compare tags and set outputs
+        id: compare
+        run: |
+          latest_tag=$(cat latest_tag.txt)
+          last_built_tag="${{ steps.read_last_tag.outputs.last_built_tag }}"
+          if [ -z "$latest_tag" ]; then
+            echo "No upstream tag found."
+            echo "new_tag=false" >> $GITHUB_OUTPUT
+            echo "tag_name=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if [ -z "$last_built_tag" ] || [ "$latest_tag" != "$last_built_tag" ]; then
+            echo "New tag detected or first run: $latest_tag"
+            echo "new_tag=true" >> $GITHUB_OUTPUT
+            echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
+          else
+            echo "No new tag. Last built: $last_built_tag"
+            echo "new_tag=false" >> $GITHUB_OUTPUT
+            echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: check-upstream-latest-tag
+    if: needs.check-upstream-latest-tag.outputs.new_tag == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.21
+    strategy:
+      matrix:
+        model:
+          - TS100
+          - TS80
+          - TS80P
+          - Pinecil
+          - MHP30
+          - Pinecilv2
+          - S60
+          - S60P
+          - T55
+          - TS101
+    steps:
+      - name: Install dependencies (apk)
+        run: |
+          apk add --no-cache gcc-riscv-none-elf g++-riscv-none-elf gcc-arm-none-eabi g++-arm-none-eabi \
+            newlib-riscv-none-elf newlib-arm-none-eabi findutils python3 py3-pip python3-dev make git bash sudo \
+            build-base musl-dev libc-dev docker docker-compose zip unzip
+
+      - name: Set up Python venv for bdflib
+        run: |
+          python3 -m venv /tmp/venv
+          . /tmp/venv/bin/activate
+          pip install --upgrade pip
+          pip install bdflib
+
+      - name: Clone Upstream IronOS at tag
+        env:
+          TAG_NAME: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+        run: |
+          echo "Cloning tag: $TAG_NAME"
+          git clone --depth 1 --branch "$TAG_NAME" https://github.com/Ralim/IronOS.git IronOS
+          cd IronOS
+          git submodule update --init --recursive
+
+      - name: Prepare toolchains (deploy.sh)
+        run: |
+          cd IronOS/scripts
+          sudo sh deploy.sh
+
+      - name: Build Multifirmware ${{ matrix.model }} (DE EN)
+        run: |
+          . /tmp/venv/bin/activate
+          cd IronOS/source
+          make -j2 model=${{ matrix.model }} custom_multi_langs="DE EN" firmware-multi_compressed_Custom
+
+      - name: Rename and clean up firmware for ${{ matrix.model }}
+        run: |
+          cd IronOS/source/Hexfile
+          TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+          case "${{ matrix.model }}" in
+            MHP30)
+              mv MHP30_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_MHP30-DE_EN.hex"
+              ;;
+            Pinecil)
+              mv Pinecil_multi_compressed_Custom.dfu "IronOS_${TAG_NAME}_Pinecil_v1-DE_EN.dfu"
+              ;;
+            Pinecilv2)
+              mv Pinecilv2_multi_compressed_Custom.bin "IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
+              ;;
+            S60)
+              mv S60_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_S60-DE_EN.hex"
+              ;;
+            S60P)
+              mv S60P_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_S60P-DE_EN.hex"
+              ;;
+            T55)
+              mv T55_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_T55-DE_EN.hex"
+              ;;
+            TS80)
+              mv TS80_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS80-DE_EN.hex"
+              ;;
+            TS80P)
+              mv TS80P_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS80P-DE_EN.hex"
+              ;;
+            TS100)
+              mv TS100_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS100-DE_EN.hex"
+              ;;
+            TS101)
+              mv TS101_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS101-DE_EN.hex"
+              ;;
+          esac
+
+      - name: Create zip for ${{ matrix.model }}
+        run: |
+          cd IronOS/source/Hexfile
+          TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+          FW_FILE=$(ls IronOS_${TAG_NAME}_*DE_EN.*)
+          ZIP_NAME="IronOS_${TAG_NAME}_${{ matrix.model }}-DE_EN.zip"
+          zip "$ZIP_NAME" "$FW_FILE"
+          mv "$ZIP_NAME" $GITHUB_WORKSPACE/
+
+      - name: Upload zip as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IronOS_${{ matrix.model }}_zip
+          path: IronOS_*-DE_EN.zip
+
+  create-tag-and-release:
+    needs: [check-upstream-latest-tag, build]
+    if: needs.check-upstream-latest-tag.outputs.new_tag == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download all zip artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Move all firmware zip files to workspace
+        run: |
+          find artifacts -type f -name 'IronOS_*_*-DE_EN.zip' -exec mv {} . \;
+
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
+
+      - name: Delete tag and release if they already exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+          RELEASE_ID=$(gh release view "$TAG" --json id -q .id || echo "")
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Deleting existing release $TAG"
+            gh release delete "$TAG" --yes
+          fi
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Deleting existing tag $TAG"
+            git push --delete origin "$TAG" || true
+            git tag -d "$TAG" || true
+          fi
+
+      - name: Create tag
+        run: |
+          TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+          name: IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+          body: |
+            Automatic release for IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
+
+            Firmware for all supported models is attached as a ZIP file.
+
+            For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+          prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
+          files: IronOS_*_*-DE_EN.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
