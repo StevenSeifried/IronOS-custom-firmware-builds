@@ -60,6 +60,7 @@ jobs:
           fi
 
   build:
+    name: Build ${{ matrix.manufacturer }} ${{ matrix.model }}
     needs: check-upstream-latest-tag
     if: needs.check-upstream-latest-tag.outputs.new_tag == 'true'
     runs-on: ubuntu-latest
