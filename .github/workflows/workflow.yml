@@ -67,17 +67,27 @@ jobs:
       image: alpine:3.21
     strategy:
       matrix:
-        model:
-          - MHP30
-          - Pinecil
-          - Pinecilv2
-          - S60
-          - S60P
-          - T55
-          - TS100
-          - TS101
-          - TS80
-          - TS80P
+        include:
+          - manufacturer: Miniware
+            model: MHP30
+          - manufacturer: Miniware
+            model: TS100
+          - manufacturer: Miniware
+            model: TS101
+          - manufacturer: Miniware
+            model: TS80
+          - manufacturer: Miniware
+            model: TS80P
+          - manufacturer: Pine64
+            model: Pinecil
+          - manufacturer: Pine64
+            model: Pinecilv2
+          - manufacturer: Sequre
+            model: S60
+          - manufacturer: Sequre
+            model: S60P
+          - manufacturer: Sequre
+            model: T55
     steps:
       - name: Install dependencies (apk)
         run: |
@@ -106,17 +116,18 @@ jobs:
           cd IronOS/scripts
           sudo sh deploy.sh
 
-      - name: Build Multifirmware ${{ matrix.model }} (DE EN)
+      - name: Build Multifirmware ${{ matrix.manufacturer }} ${{ matrix.model }} (DE EN)
         run: |
           . /tmp/venv/bin/activate
           cd IronOS/source
           make -j2 model=${{ matrix.model }} custom_multi_langs="DE EN" firmware-multi_compressed_Custom
 
-      - name: Rename and clean up firmware for ${{ matrix.model }}
+      - name: Rename and clean up firmware for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          case "${{ matrix.model }}" in
+          MODEL="${{ matrix.model }}"
+          case "$MODEL" in
             MHP30)
               mv MHP30_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_MHP30-DE_EN.hex"
               ;;
@@ -149,11 +160,12 @@ jobs:
               ;;
           esac
 
-      - name: Generate SHA256 checksum for ${{ matrix.model }}
+      - name: Generate SHA256 checksum for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          case "${{ matrix.model }}" in
+          MODEL="${{ matrix.model }}"
+          case "$MODEL" in
             Pinecil)
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v1-DE_EN.dfu"
               ;;
@@ -161,21 +173,23 @@ jobs:
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
               ;;
             *)
-              FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
+              FW_FILE=$(ls IronOS_${TAG_NAME}_${MODEL}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
               ;;
           esac
           if [ -z "$FW_FILE" ] || [ ! -f "$FW_FILE" ]; then
-            echo "ERROR: Firmware file not found for ${{ matrix.model }}!"
+            echo "ERROR: Firmware file not found for $MODEL!"
             ls -l
             exit 1
           fi
           sha256sum "$FW_FILE" > "${FW_FILE}.sha256"
 
-      - name: Create zip for ${{ matrix.model }}
+      - name: Create zip for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          case "${{ matrix.model }}" in
+          MANUFACTURER="${{ matrix.manufacturer }}"
+          MODEL="${{ matrix.model }}"
+          case "$MODEL" in
             Pinecil)
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v1-DE_EN.dfu"
               ;;
@@ -183,23 +197,23 @@ jobs:
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
               ;;
             *)
-              FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
+              FW_FILE=$(ls IronOS_${TAG_NAME}_${MODEL}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
               ;;
           esac
           if [ -z "$FW_FILE" ] || [ ! -f "$FW_FILE" ]; then
-            echo "ERROR: Firmware file not found for ${{ matrix.model }}!"
+            echo "ERROR: Firmware file not found for $MODEL!"
             ls -l
             exit 1
           fi
-          ZIP_NAME="IronOS_${TAG_NAME}_${{ matrix.model }}-DE_EN.zip"
+          ZIP_NAME="IronOS_${TAG_NAME}_${MANUFACTURER}_${MODEL}-DE_EN.zip"
           zip "$ZIP_NAME" "$FW_FILE" "${FW_FILE}.sha256"
           mv "$ZIP_NAME" $GITHUB_WORKSPACE/
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: IronOS_${{ matrix.model }}_zip
-          path: IronOS_*-DE_EN.zip
+          name: ${{ matrix.manufacturer }}_${{ matrix.model }}_zip
+          path: IronOS_*_*_*-DE_EN.zip
 
   create-tag-and-release:
     needs: [check-upstream-latest-tag, build]
@@ -216,7 +230,7 @@ jobs:
 
       - name: Move all firmware zip files to workspace
         run: |
-          find artifacts -type f -name 'IronOS_*_*-DE_EN.zip' -exec mv {} . \;
+          find artifacts -type f -name 'IronOS_*_*_*-DE_EN.zip' -exec mv {} . \;
 
       - name: Install GitHub CLI
         run: sudo apt-get update && sudo apt-get install -y gh
@@ -242,6 +256,6 @@ jobs:
 
             For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
-          files: IronOS_*_*-DE_EN.zip
+          files: IronOS_*_*_*-DE_EN.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
