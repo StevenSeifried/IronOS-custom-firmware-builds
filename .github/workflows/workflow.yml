@@ -68,16 +68,16 @@ jobs:
     strategy:
       matrix:
         model:
-          - TS100
-          - TS80
-          - TS80P
-          - Pinecil
           - MHP30
+          - Pinecil
           - Pinecilv2
           - S60
           - S60P
           - T55
+          - TS100
           - TS101
+          - TS80
+          - TS80P
     steps:
       - name: Install dependencies (apk)
         run: |
@@ -149,13 +149,20 @@ jobs:
               ;;
           esac
 
+      - name: Generate SHA256 checksum for ${{ matrix.model }}
+        run: |
+          cd IronOS/source/Hexfile
+          TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.*)
+          sha256sum "$FW_FILE" > "${FW_FILE}.sha256"
+
       - name: Create zip for ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          FW_FILE=$(ls IronOS_${TAG_NAME}_*DE_EN.*)
+          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.*)
           ZIP_NAME="IronOS_${TAG_NAME}_${{ matrix.model }}-DE_EN.zip"
-          zip "$ZIP_NAME" "$FW_FILE"
+          zip "$ZIP_NAME" "$FW_FILE" "${FW_FILE}.sha256"
           mv "$ZIP_NAME" $GITHUB_WORKSPACE/
 
       - name: Upload zip as artifact
@@ -201,7 +208,7 @@ jobs:
           tag_name: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           name: IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           body: |
-            Automatic release for IronOS v${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
+            Automatic release for IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
 
             For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
