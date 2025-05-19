@@ -153,14 +153,24 @@ jobs:
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.*)
+          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
+          if [ -z "$FW_FILE" ]; then
+            echo "ERROR: Firmware file not found for ${{ matrix.model }}!"
+            ls -l
+            exit 1
+          fi
           sha256sum "$FW_FILE" > "${FW_FILE}.sha256"
 
       - name: Create zip for ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.*)
+          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
+          if [ -z "$FW_FILE" ]; then
+            echo "ERROR: Firmware file not found for ${{ matrix.model }}!"
+            ls -l
+            exit 1
+          fi
           ZIP_NAME="IronOS_${TAG_NAME}_${{ matrix.model }}-DE_EN.zip"
           zip "$ZIP_NAME" "$FW_FILE" "${FW_FILE}.sha256"
           mv "$ZIP_NAME" $GITHUB_WORKSPACE/
