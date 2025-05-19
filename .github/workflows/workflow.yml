@@ -153,8 +153,18 @@ jobs:
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
-          if [ -z "$FW_FILE" ]; then
+          case "${{ matrix.model }}" in
+            Pinecil)
+              FW_FILE="IronOS_${TAG_NAME}_Pinecil_v1-DE_EN.dfu"
+              ;;
+            Pinecilv2)
+              FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
+              ;;
+            *)
+              FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
+              ;;
+          esac
+          if [ -z "$FW_FILE" ] || [ ! -f "$FW_FILE" ]; then
             echo "ERROR: Firmware file not found for ${{ matrix.model }}!"
             ls -l
             exit 1
@@ -165,8 +175,18 @@ jobs:
         run: |
           cd IronOS/source/Hexfile
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
-          if [ -z "$FW_FILE" ]; then
+          case "${{ matrix.model }}" in
+            Pinecil)
+              FW_FILE="IronOS_${TAG_NAME}_Pinecil_v1-DE_EN.dfu"
+              ;;
+            Pinecilv2)
+              FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
+              ;;
+            *)
+              FW_FILE=$(ls IronOS_${TAG_NAME}_*${{ matrix.model }}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
+              ;;
+          esac
+          if [ -z "$FW_FILE" ] || [ ! -f "$FW_FILE" ]; then
             echo "ERROR: Firmware file not found for ${{ matrix.model }}!"
             ls -l
             exit 1
