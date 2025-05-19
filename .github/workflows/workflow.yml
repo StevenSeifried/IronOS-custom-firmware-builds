@@ -164,60 +164,47 @@ jobs:
           name: IronOS_${{ matrix.model }}_zip
           path: IronOS_*-DE_EN.zip
 
-  create-tag-and-release:
-    needs: [check-upstream-latest-tag, build]
-    if: needs.check-upstream-latest-tag.outputs.new_tag == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+create-tag-and-release:
+  needs: [check-upstream-latest-tag, build]
+  if: needs.check-upstream-latest-tag.outputs.new_tag == 'true'
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Download all zip artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+    - name: Download all zip artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
 
-      - name: Move all firmware zip files to workspace
-        run: |
-          find artifacts -type f -name 'IronOS_*_*-DE_EN.zip' -exec mv {} . \;
+    - name: Move all firmware zip files to workspace
+      run: |
+        find artifacts -type f -name 'IronOS_*_*-DE_EN.zip' -exec mv {} . \;
 
-      - name: Install GitHub CLI
-        run: sudo apt-get update && sudo apt-get install -y gh
+    - name: Install GitHub CLI
+      run: sudo apt-get update && sudo apt-get install -y gh
 
-      - name: Delete tag and release if they already exist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          RELEASE_ID=$(gh release view "$TAG" --json id -q .id || echo "")
-          if [ -n "$RELEASE_ID" ]; then
-            echo "Deleting existing release $TAG"
-            gh release delete "$TAG" --yes
-          fi
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Deleting existing tag $TAG"
-            git push --delete origin "$TAG" || true
-            git tag -d "$TAG" || true
-          fi
-
-      - name: Create tag
-        run: |
-          TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+    - name: Create tag if not exists
+      run: |
+        TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+        if git rev-parse "$TAG" >/dev/null 2>&1; then
+          echo "Tag $TAG exists, skipping creation."
+        else
           git tag "$TAG"
           git push origin "$TAG"
+          echo "New tag $TAG created and pushed."
+        fi
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
-          name: IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
-          body: |
-            Automatic release for IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+        name: IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+        body: |
+          Automatic release for IronOS v${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
 
-            Firmware for all supported models is attached as a ZIP file.
-
-            For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
-          prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
-          files: IronOS_*_*-DE_EN.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
+        prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
+        files: IronOS_*_*-DE_EN.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
