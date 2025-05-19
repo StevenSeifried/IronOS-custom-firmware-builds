@@ -27,7 +27,7 @@ jobs:
             | sed 's|refs/tags/||' \
             | tail -n1 > latest_tag.txt
           latest_tag=$(cat latest_tag.txt)
-          echo "Latest upstream tag: $latest_tag"
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
 
       - name: Read last built upstream tag from repo (if exists)
         id: read_last_tag
@@ -236,15 +236,32 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get update && sudo apt-get install -y gh
 
-      - name: Create tag if not exists
+      - name: Set up Git user
+        run: |
+          git config --global user.name "Steven Seifried"
+          git config --global user.email "gitlab@canox.net"
+
+      - name: Import GPG key and configure git signing
+        env:
+          GPGKEY: ${{ secrets.GPGKEY }}
+        run: |
+          echo "$GPGKEY" | base64 --decode | gpg --batch --import
+          KEYID=$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5 | head -n1)
+          echo "Using GPG Key: $KEYID"
+          git config --global user.signingkey "$KEYID"
+          git config --global gpg.program gpg
+          git config --global tag.gpgSign true
+          export GPG_TTY=$(tty)
+
+      - name: Create signed tag if not exists
         run: |
           TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG exists, skipping creation."
           else
-            git tag "$TAG"
+            git tag -s "$TAG" -m "Upstream release $TAG"
             git push origin "$TAG"
-            echo "New tag $TAG created and pushed."
+            echo "New signed tag $TAG created and pushed."
           fi
 
       - name: Create GitHub Release
