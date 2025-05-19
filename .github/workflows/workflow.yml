@@ -201,9 +201,7 @@ jobs:
           tag_name: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           name: IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           body: |
-            Automatic release for IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
-
-            Firmware for all supported models is attached as a ZIP file.
+            Automatic release for IronOS v${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
 
             For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
