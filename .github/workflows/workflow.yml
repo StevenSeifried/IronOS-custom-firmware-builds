@@ -29,33 +29,23 @@ jobs:
           latest_tag=$(cat latest_tag.txt)
           echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
 
-      - name: Read last built upstream tag from repo (if exists)
-        id: read_last_tag
-        run: |
-          if [ -f IronOS_last_upstream_tag.txt ]; then
-            echo "last_built_tag=$(cat IronOS_last_upstream_tag.txt)" >> $GITHUB_OUTPUT
-          else
-            echo "last_built_tag=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Compare tags and set outputs
+      - name: Compare upstream tag with local and remote tags
         id: compare
         run: |
           latest_tag=$(cat latest_tag.txt)
-          last_built_tag="${{ steps.read_last_tag.outputs.last_built_tag }}"
-          if [ -z "$latest_tag" ]; then
-            echo "No upstream tag found."
+          # Prüfen, ob Tag lokal existiert
+          if git tag --list | grep -Fxq "$latest_tag"; then
+            echo "Upstream tag $latest_tag exists locally. No new build needed."
             echo "new_tag=false" >> $GITHUB_OUTPUT
-            echo "tag_name=" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          if [ -z "$last_built_tag" ] || [ "$latest_tag" != "$last_built_tag" ]; then
-            echo "New tag detected or first run: $latest_tag"
-            echo "new_tag=true" >> $GITHUB_OUTPUT
+            echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
+          # Prüfen, ob Tag auf Remote (origin) existiert
+          elif git ls-remote --tags origin | grep -q "refs/tags/$latest_tag$"; then
+            echo "Upstream tag $latest_tag exists on remote. No new build needed."
+            echo "new_tag=false" >> $GITHUB_OUTPUT
             echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
           else
-            echo "No new tag. Last built: $last_built_tag"
-            echo "new_tag=false" >> $GITHUB_OUTPUT
+            echo "Upstream tag $latest_tag is new. Build needed."
+            echo "new_tag=true" >> $GITHUB_OUTPUT
             echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
           fi
 
@@ -256,8 +246,9 @@ jobs:
       - name: Create signed tag if not exists
         run: |
           TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG exists, skipping creation."
+          # Prüfe, ob Tag auf Remote existiert
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
+            echo "Tag $TAG exists on remote, skipping creation."
           else
             git tag -s "$TAG" -m "Upstream release $TAG"
             git push origin "$TAG"
