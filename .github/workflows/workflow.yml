@@ -111,7 +111,11 @@ jobs:
         run: |
           . /tmp/venv/bin/activate
           cd IronOS/source
-          make -j2 model=${{ matrix.model }} custom_multi_langs="DE EN" firmware-multi_compressed_Custom
+          if [ "${{ matrix.model }}" = "Pinecilv2" ]; then
+            make -j2 model=Pinecilv2 custom_multi_langs="DE EN" ws2812b_enable=1 firmware-multi_compressed_Custom
+          else
+            make -j2 model=${{ matrix.model }} custom_multi_langs="DE EN" firmware-multi_compressed_Custom
+          fi
 
       - name: Rename and clean up firmware for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
