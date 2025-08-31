@@ -21,7 +21,7 @@ jobs:
       - name: Fetch latest upstream tag
         id: get_latest_tag
         run: |
-          git ls-remote --tags --sort="v:refname" https://github.com/Ralim/IronOS.git \
+          git -c versionsort.suffix=- ls-remote --tags --sort='version:refname' https://github.com/Ralim/IronOS.git \
             | awk '{print $2}' \
             | grep -v '\^{}' \
             | sed 's|refs/tags/||' \
