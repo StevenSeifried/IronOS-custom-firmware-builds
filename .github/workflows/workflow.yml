@@ -139,9 +139,6 @@ jobs:
             TS100)
               mv TS100_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS100-DE_EN.hex"
               ;;
-#            TS101)
-#              mv TS101_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS101-DE_EN.hex"
-#              ;;
           esac
       - name: Generate SHA256 checksum for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
@@ -155,9 +152,6 @@ jobs:
             Pinecilv2)
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
               ;;
-#            TS101)
-#              FW_FILE="IronOS_${TAG_NAME}_TS101-DE_EN.hex"
-#              ;;
             *)
               FW_FILE=$(ls IronOS_${TAG_NAME}_${MODEL}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
               ;;
@@ -181,9 +175,6 @@ jobs:
             Pinecilv2)
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
               ;;
-#            TS101)
-#              FW_FILE="IronOS_${TAG_NAME}_TS101-DE_EN.hex"
-#              ;;
             *)
               FW_FILE=$(ls IronOS_${TAG_NAME}_${MODEL}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
               ;;
