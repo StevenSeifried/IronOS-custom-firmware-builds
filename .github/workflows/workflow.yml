@@ -1,13 +1,10 @@
 name: Upstream Tag Check, Build, Tag & Release
-
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *'
-
 permissions:
   contents: write
-
 jobs:
   check-upstream-latest-tag:
     runs-on: ubuntu-latest
@@ -17,7 +14,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Fetch latest upstream tag
         id: get_latest_tag
         run: |
@@ -28,7 +24,6 @@ jobs:
             | tail -n1 > latest_tag.txt
           latest_tag=$(cat latest_tag.txt)
           echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
-
       - name: Compare upstream tag with local and remote tags
         id: compare
         run: |
@@ -48,7 +43,6 @@ jobs:
             echo "new_tag=true" >> $GITHUB_OUTPUT
             echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
           fi
-
   build:
     name: Build ${{ matrix.manufacturer }} ${{ matrix.model }}
     needs: check-upstream-latest-tag
@@ -63,8 +57,8 @@ jobs:
             model: MHP30
           - manufacturer: Miniware
             model: TS100
-          - manufacturer: Miniware
-            model: TS101
+#          - manufacturer: Miniware
+#            model: TS101
           - manufacturer: Miniware
             model: TS80
           - manufacturer: Miniware
@@ -85,14 +79,12 @@ jobs:
           apk add --no-cache gcc-riscv-none-elf g++-riscv-none-elf gcc-arm-none-eabi g++-arm-none-eabi \
             newlib-riscv-none-elf newlib-arm-none-eabi findutils python3 py3-pip python3-dev make git bash sudo \
             build-base musl-dev libc-dev docker docker-compose zip unzip
-
       - name: Set up Python venv for bdflib
         run: |
           python3 -m venv /tmp/venv
           . /tmp/venv/bin/activate
           pip install --upgrade pip
           pip install bdflib
-
       - name: Clone Upstream IronOS at tag
         env:
           TAG_NAME: ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
@@ -101,12 +93,10 @@ jobs:
           git clone --depth 1 --branch "$TAG_NAME" https://github.com/Ralim/IronOS.git IronOS
           cd IronOS
           git submodule update --init --recursive
-
       - name: Prepare toolchains (deploy.sh)
         run: |
           cd IronOS/scripts
           sudo sh deploy.sh
-
       - name: Build Multifirmware ${{ matrix.manufacturer }} ${{ matrix.model }} (DE EN)
         run: |
           . /tmp/venv/bin/activate
@@ -116,7 +106,6 @@ jobs:
           else
             make -j2 model=${{ matrix.model }} custom_multi_langs="DE EN" firmware-multi_compressed_Custom
           fi
-
       - name: Rename and clean up firmware for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
@@ -150,11 +139,10 @@ jobs:
             TS100)
               mv TS100_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS100-DE_EN.hex"
               ;;
-            TS101)
-              mv TS101_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS101-DE_EN.hex"
-              ;;
+#            TS101)
+#              mv TS101_multi_compressed_Custom.hex "IronOS_${TAG_NAME}_TS101-DE_EN.hex"
+#              ;;
           esac
-
       - name: Generate SHA256 checksum for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
@@ -167,6 +155,9 @@ jobs:
             Pinecilv2)
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
               ;;
+#            TS101)
+#              FW_FILE="IronOS_${TAG_NAME}_TS101-DE_EN.hex"
+#              ;;
             *)
               FW_FILE=$(ls IronOS_${TAG_NAME}_${MODEL}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
               ;;
@@ -177,7 +168,6 @@ jobs:
             exit 1
           fi
           sha256sum "$FW_FILE" > "${FW_FILE}.sha256"
-
       - name: Create zip for ${{ matrix.manufacturer }} ${{ matrix.model }}
         run: |
           cd IronOS/source/Hexfile
@@ -191,6 +181,9 @@ jobs:
             Pinecilv2)
               FW_FILE="IronOS_${TAG_NAME}_Pinecil_v2-DE_EN.bin"
               ;;
+#            TS101)
+#              FW_FILE="IronOS_${TAG_NAME}_TS101-DE_EN.hex"
+#              ;;
             *)
               FW_FILE=$(ls IronOS_${TAG_NAME}_${MODEL}-DE_EN.* 2>/dev/null | grep -v '\.sha256$' || true)
               ;;
@@ -203,13 +196,11 @@ jobs:
           ZIP_NAME="IronOS_${TAG_NAME}_${MANUFACTURER}_${MODEL}-DE_EN.zip"
           zip "$ZIP_NAME" "$FW_FILE" "${FW_FILE}.sha256"
           mv "$ZIP_NAME" $GITHUB_WORKSPACE/
-
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.manufacturer }}_${{ matrix.model }}_zip
           path: IronOS_*_*_*-DE_EN.zip
-
   create-tag-and-release:
     needs: [check-upstream-latest-tag, build]
     if: needs.check-upstream-latest-tag.outputs.new_tag == 'true'
@@ -217,24 +208,19 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Download all zip artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
       - name: Move all firmware zip files to workspace
         run: |
           find artifacts -type f -name 'IronOS_*_*_*-DE_EN.zip' -exec mv {} . \;
-
       - name: Install GitHub CLI
         run: sudo apt-get update && sudo apt-get install -y gh
-
       - name: Set up Git user
         run: |
           git config --global user.name "Steven Seifried"
           git config --global user.email "gitlab@canox.net"
-
       - name: Import GPG key and configure git signing
         env:
           GPGKEY: ${{ secrets.GPGKEY }}
@@ -246,7 +232,6 @@ jobs:
           git config --global gpg.program gpg
           git config --global tag.gpgSign true
           export GPG_TTY=$(tty)
-
       - name: Create signed tag if not exists
         run: |
           TAG="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
@@ -258,7 +243,6 @@ jobs:
             git push origin "$TAG"
             echo "New signed tag $TAG created and pushed."
           fi
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -266,7 +250,6 @@ jobs:
           name: IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           body: |
             Automatic release for IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}.
-
             For changelog see https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }}
           prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') }}
           files: IronOS_*_*_*-DE_EN.zip
