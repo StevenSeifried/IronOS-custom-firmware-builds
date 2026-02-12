@@ -73,6 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: alpine:3.21
+      options: --privileged
     strategy:
       fail-fast: false
       matrix:
@@ -117,7 +118,30 @@ jobs:
             newlib-riscv-none-elf newlib-arm-none-eabi \
             findutils python3 py3-pip python3-dev \
             make git bash sudo build-base musl-dev libc-dev \
-            zip unzip
+            zip unzip docker docker-compose
+      
+      - name: Start Docker daemon
+        run: |
+          # Starte Docker daemon im Hintergrund
+          dockerd > /var/log/dockerd.log 2>&1 &
+          
+          # Warte bis Docker bereit ist
+          echo "Waiting for Docker daemon to start..."
+          for i in $(seq 1 30); do
+            if docker info >/dev/null 2>&1; then
+              echo "Docker daemon is ready!"
+              docker info
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          if ! docker info >/dev/null 2>&1; then
+            echo "ERROR: Docker daemon failed to start"
+            cat /var/log/dockerd.log
+            exit 1
+          fi
 
       - name: Set up Python venv and install bdflib
         run: |
