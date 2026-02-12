@@ -247,6 +247,58 @@ jobs:
           mv "$OLD_FILE" "$NEW_FILE"
           echo "Renamed: $OLD_FILE -> $NEW_FILE"
 
+      - name: Add bootlogo for Sequre models (S60, S60P, T55)
+        if: matrix.model == 'S60' || matrix.model == 'S60P' || matrix.model == 'T55'
+        run: |
+          . /tmp/venv/bin/activate
+          
+          # Clone IronOS-Meta
+          echo "::group::Cloning IronOS-Meta"
+          cd /tmp
+          git clone --depth 1 https://github.com/Ralim/IronOS-Meta.git
+          cd IronOS-Meta/Bootup\ Logos
+          echo "::endgroup::"
+          
+          # Installiere Pillow für img2logo.py
+          pip install --no-cache-dir Pillow
+          
+          TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
+          MODEL="${{ matrix.model }}"
+          FW_FILE="IronOS_${TAG_NAME}_${MODEL}-DE_EN.hex"
+          FW_PATH="$GITHUB_WORKSPACE/IronOS/source/Hexfile/${FW_FILE}"
+          
+          echo "::group::Adding bootlogo to $MODEL"
+          
+          # Prüfe ob Firmware-Datei existiert
+          if [ ! -f "$FW_PATH" ]; then
+            echo "::error::Firmware file not found: $FW_PATH"
+            exit 1
+          fi
+          
+          # Kopiere Firmware hierher
+          cp "$FW_PATH" .
+          
+          # Führe img2logo.py aus (alle Sequre Modelle nutzen -m s60)
+          python3 img2logo.py Images/IronOS.gif Logo_ -m s60 --merge "$FW_FILE"
+          
+          # Prüfe ob Logo-Datei erstellt wurde
+          LOGO_FILE="Logo_${FW_FILE}"
+          if [ ! -f "$LOGO_FILE" ]; then
+            echo "::error::Logo file not created: $LOGO_FILE"
+            ls -lah
+            exit 1
+          fi
+          
+          # Lösche Original und benenne Logo-Datei um
+          rm "$FW_FILE"
+          mv "$LOGO_FILE" "$FW_FILE"
+          
+          # Kopiere zurück ins Hexfile-Verzeichnis
+          cp "$FW_FILE" "$FW_PATH"
+          
+          echo "::notice::Bootlogo added to $FW_FILE"
+          echo "::endgroup::"
+
       - name: Generate SHA256 checksum
         run: |
           cd IronOS/source/Hexfile
