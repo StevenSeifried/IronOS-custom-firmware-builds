@@ -2,6 +2,12 @@ name: Upstream Tag Check, Build, Tag & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      include_prereleases:
+        description: 'Include RC/Beta/Alpha releases'
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: '0 3 * * *'
 
@@ -10,12 +16,19 @@ permissions:
   packages: write
   actions: read
 
+env:
+  # Setze auf 'true' um auch RC/Beta builds zu erstellen
+  # Bei schedule: immer false (nur stable)
+  # Bei manual: user choice
+  INCLUDE_PRERELEASES: ${{ github.event.inputs.include_prereleases || 'false' }}
+
 jobs:
   check-upstream-latest-tag:
     runs-on: ubuntu-latest
     outputs:
       new_tag: ${{ steps.compare.outputs.new_tag }}
       tag_name: ${{ steps.compare.outputs.tag_name }}
+      is_prerelease: ${{ steps.compare.outputs.is_prerelease }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -25,19 +38,33 @@ jobs:
       - name: Fetch latest upstream tag
         id: get_latest_tag
         run: |
-          latest_tag=$(git ls-remote --tags --sort='version:refname' \
+          # Hole alle Tags
+          all_tags=$(git ls-remote --tags --sort='version:refname' \
             https://github.com/Ralim/IronOS.git \
             | awk '{print $2}' \
             | grep -v '\^{}' \
-            | sed 's|refs/tags/||' \
-            | tail -n1)
+            | sed 's|refs/tags/||')
+          
+          if [ "${{ env.INCLUDE_PRERELEASES }}" = "true" ]; then
+            # Nehme neuestes Tag (inkl. RC/Beta)
+            latest_tag=$(echo "$all_tags" | tail -n1)
+            echo "::notice::Including pre-releases"
+          else
+            # Filtere RC/Beta/Alpha aus
+            latest_tag=$(echo "$all_tags" \
+              | grep -v -i 'rc' \
+              | grep -v -i 'beta' \
+              | grep -v -i 'alpha' \
+              | tail -n1)
+            echo "::notice::Stable releases only"
+          fi
           
           if [ -z "$latest_tag" ]; then
             echo "::error::No upstream tag found"
             exit 1
           fi
           
-          echo "Found upstream tag: $latest_tag"
+          echo "Found latest upstream tag: $latest_tag"
           echo "$latest_tag" > latest_tag.txt
           echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
 
@@ -46,11 +73,21 @@ jobs:
         run: |
           latest_tag=$(cat latest_tag.txt)
           
+          # Prüfe ob es ein Pre-Release ist
+          if echo "$latest_tag" | grep -qi 'rc\|beta\|alpha'; then
+            is_prerelease="true"
+            echo "::notice::Tag $latest_tag is a pre-release"
+          else
+            is_prerelease="false"
+            echo "::notice::Tag $latest_tag is a stable release"
+          fi
+          
           # Prüfen, ob Tag lokal existiert
           if git tag --list | grep -Fxq "$latest_tag"; then
             echo "::notice::Upstream tag $latest_tag exists locally. No new build needed."
             echo "new_tag=false" >> $GITHUB_OUTPUT
             echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
+            echo "is_prerelease=$is_prerelease" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -59,12 +96,14 @@ jobs:
             echo "::notice::Upstream tag $latest_tag exists on remote. No new build needed."
             echo "new_tag=false" >> $GITHUB_OUTPUT
             echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
+            echo "is_prerelease=$is_prerelease" >> $GITHUB_OUTPUT
             exit 0
           fi
           
           echo "::notice::Upstream tag $latest_tag is new. Build needed."
           echo "new_tag=true" >> $GITHUB_OUTPUT
           echo "tag_name=$latest_tag" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$is_prerelease" >> $GITHUB_OUTPUT
 
   build:
     name: Build ${{ matrix.manufacturer }} ${{ matrix.model }}
@@ -119,7 +158,7 @@ jobs:
             findutils python3 py3-pip python3-dev \
             make git bash sudo build-base musl-dev libc-dev \
             zip unzip docker docker-compose
-      
+
       - name: Start Docker daemon
         run: |
           # Starte Docker daemon im Hintergrund
@@ -365,7 +404,7 @@ jobs:
             
             ### Changelog
             For detailed changelog, see the [upstream release](https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }})
-          prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') || contains(needs.check-upstream-latest-tag.outputs.tag_name, 'beta') }}
+          prerelease: ${{ needs.check-upstream-latest-tag.outputs.is_prerelease == 'true' }}
           files: IronOS_*_*_*-DE_EN.zip
           fail_on_unmatched_files: true
           generate_release_notes: false
