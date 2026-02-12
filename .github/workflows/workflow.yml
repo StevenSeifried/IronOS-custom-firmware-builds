@@ -244,17 +244,18 @@ jobs:
           cp "$FW_PATH" .
           
           # Führe img2logo.py aus (alle Sequre Modelle nutzen -m s60)
+          # Das Skript erstellt Logo_<ImageName>.hex, nicht Logo_<FirmwareName>.hex
           python3 img2logo.py Images/IronOS.gif Logo_ -m s60 --merge "$FW_FILE"
           
-          # Prüfe ob Logo-Datei erstellt wurde
-          LOGO_FILE="Logo_${FW_FILE}"
+          # Das Skript erstellt Logo_IronOS.gif.hex (basierend auf Image-Namen)
+          LOGO_FILE="Logo_IronOS.gif.hex"
           if [ ! -f "$LOGO_FILE" ]; then
             echo "::error::Logo file not created: $LOGO_FILE"
             ls -lah
             exit 1
           fi
           
-          # Lösche Original und benenne Logo-Datei um
+          # Lösche Original und benenne Logo-Datei zum Original-Namen um
           rm "$FW_FILE"
           mv "$LOGO_FILE" "$FW_FILE"
           
