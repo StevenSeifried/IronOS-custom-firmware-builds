@@ -3,7 +3,7 @@ name: Upstream Tag Check, Build, Tag & Release
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 3 * * 0'  # Nur Sonntags um 3 Uhr morgens
 
 permissions:
   contents: write
@@ -85,33 +85,66 @@ jobs:
           - manufacturer: Miniware
             model: MHP30
             extension: hex
+            bootlogo: true
+            bootlogo_model: mhp30
+            bootlogo_image: IronOS.gif
           - manufacturer: Miniware
             model: TS100
             extension: hex
+            bootlogo: true
+            bootlogo_model: miniware
+            bootlogo_image: IronOS.gif
+          - manufacturer: Miniware
+            model: TS101
+            extension: hex
+            bootlogo: true
+            bootlogo_model: ts101
+            bootlogo_image: IronOS.gif
           - manufacturer: Miniware
             model: TS80
             extension: hex
+            bootlogo: true
+            bootlogo_model: miniware
+            bootlogo_image: IronOS.gif
           - manufacturer: Miniware
             model: TS80P
             extension: hex
+            bootlogo: true
+            bootlogo_model: miniware
+            bootlogo_image: IronOS.gif
           - manufacturer: Pine64
             model: Pinecil
             extension: dfu
             suffix: _v1
+            bootlogo: true
+            bootlogo_model: pinecilv1
+            bootlogo_image: IronOS.gif
           - manufacturer: Pine64
             model: Pinecilv2
             extension: bin
             suffix: _v2
             ws2812b: 1
+            bootlogo: true
+            bootlogo_model: pinecilv2
+            bootlogo_image: glitch.gif
           - manufacturer: Sequre
             model: S60
             extension: hex
+            bootlogo: true
+            bootlogo_model: s60
+            bootlogo_image: IronOS.gif
           - manufacturer: Sequre
             model: S60P
             extension: hex
+            bootlogo: true
+            bootlogo_model: s60
+            bootlogo_image: IronOS.gif
           - manufacturer: Sequre
             model: T55
             extension: hex
+            bootlogo: true
+            bootlogo_model: s60
+            bootlogo_image: IronOS.gif
     
     steps:
       - name: Install dependencies (apk)
@@ -212,8 +245,8 @@ jobs:
           mv "$OLD_FILE" "$NEW_FILE"
           echo "Renamed: $OLD_FILE -> $NEW_FILE"
 
-      - name: Add bootlogo for Sequre models (S60, S60P, T55)
-        if: matrix.model == 'S60' || matrix.model == 'S60P' || matrix.model == 'T55'
+      - name: Add bootlogo for supported models
+        if: matrix.bootlogo == true
         run: |
           . /tmp/venv/bin/activate
           
@@ -229,10 +262,15 @@ jobs:
           
           TAG_NAME="${{ needs.check-upstream-latest-tag.outputs.tag_name }}"
           MODEL="${{ matrix.model }}"
-          FW_FILE="IronOS_${TAG_NAME}_${MODEL}-DE_EN.hex"
+          EXT="${{ matrix.extension }}"
+          SUFFIX="${{ matrix.suffix }}"
+          BOOTLOGO_MODEL="${{ matrix.bootlogo_model }}"
+          BOOTLOGO_IMAGE="${{ matrix.bootlogo_image }}"
+          
+          FW_FILE="IronOS_${TAG_NAME}_${MODEL}${SUFFIX}-DE_EN.${EXT}"
           FW_PATH="$GITHUB_WORKSPACE/IronOS/source/Hexfile/${FW_FILE}"
           
-          echo "::group::Adding bootlogo to $MODEL"
+          echo "::group::Adding bootlogo '$BOOTLOGO_IMAGE' to $MODEL (model: $BOOTLOGO_MODEL)"
           
           # Prüfe ob Firmware-Datei existiert
           if [ ! -f "$FW_PATH" ]; then
@@ -243,12 +281,11 @@ jobs:
           # Kopiere Firmware hierher
           cp "$FW_PATH" .
           
-          # Führe img2logo.py aus (alle Sequre Modelle nutzen -m s60)
-          # Das Skript erstellt Logo_<ImageName>.hex, nicht Logo_<FirmwareName>.hex
-          python3 img2logo.py Images/IronOS.gif Logo_ -m s60 --merge "$FW_FILE"
+          # Führe img2logo.py aus mit dem entsprechenden Modell-Parameter
+          python3 img2logo.py Images/"$BOOTLOGO_IMAGE" Logo_ -m "$BOOTLOGO_MODEL" --merge "$FW_FILE"
           
-          # Das Skript erstellt Logo_IronOS.gif.hex (basierend auf Image-Namen)
-          LOGO_FILE="Logo_IronOS.gif.hex"
+          # Das Skript erstellt Logo_<ImageName>.<ext> (basierend auf Image-Namen)
+          LOGO_FILE="Logo_${BOOTLOGO_IMAGE}.${EXT}"
           if [ ! -f "$LOGO_FILE" ]; then
             echo "::error::Logo file not created: $LOGO_FILE"
             ls -lah
@@ -262,7 +299,7 @@ jobs:
           # Kopiere zurück ins Hexfile-Verzeichnis
           cp "$FW_FILE" "$FW_PATH"
           
-          echo "::notice::Bootlogo added to $FW_FILE"
+          echo "::notice::Bootlogo '$BOOTLOGO_IMAGE' added to $FW_FILE"
           echo "::endgroup::"
 
       - name: Generate SHA256 checksum
@@ -327,7 +364,7 @@ jobs:
 
       - name: Verify artifact count
         run: |
-          EXPECTED_COUNT=9
+          EXPECTED_COUNT=10
           ACTUAL_COUNT=$(find artifacts -type f -name 'IronOS_*_*_*-DE_EN.zip' | wc -l)
           
           echo "Expected builds: $EXPECTED_COUNT"
@@ -408,20 +445,26 @@ jobs:
           body: |
             ## Automatic Release for IronOS ${{ needs.check-upstream-latest-tag.outputs.tag_name }}
             
-            This is an automated build of IronOS firmware with DE/EN language support.
+            This is an automated build of IronOS firmware with DE/EN language support and custom bootlogos.
             
-            ### Supported Devices
-            - **Miniware**: MHP30, TS100, TS80, TS80P
-            - **Pine64**: Pinecil v1, Pinecil v2
+            ### Supported Devices with Bootlogos
+            
+            **IronOS Logo (Images/IronOS.gif):**
+            - **Miniware**: MHP30, TS100, TS101, TS80, TS80P
+            - **Pine64**: Pinecil v1
             - **Sequre**: S60, S60P, T55
+            
+            **Glitch Logo (Images/glitch.gif):**
+            - **Pine64**: Pinecil v2
             
             ### Installation
             1. Download the ZIP file for your device
-            2. Verify the SHA256 checksum
+            2. Verify the SHA256 checksum (included in ZIP)
             3. Flash the firmware according to your device's instructions
             
+            
             ### Changelog
-            For detailed changelog, see the [upstream release](https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }})
+            For detailed upstream changelog, see the [official IronOS release](https://github.com/Ralim/IronOS/releases/tag/${{ needs.check-upstream-latest-tag.outputs.tag_name }})
           prerelease: ${{ contains(needs.check-upstream-latest-tag.outputs.tag_name, 'rc') || contains(needs.check-upstream-latest-tag.outputs.tag_name, 'beta') }}
           files: IronOS_*_*_*-DE_EN.zip
           fail_on_unmatched_files: true
